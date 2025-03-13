@@ -7,7 +7,7 @@ TRAVBOX_DIR="$HOME/travbox"
 CORE_DIR="$TRAVBOX_DIR/core"
 CONFIG_DIR="$TRAVBOX_DIR/config"
 SCRIPTS_DIR="$TRAVBOX_DIR/scripts"
-VERSION="0.1.1"
+VERSION="0.1.2"
 
 # 颜色定义
 NORMAL="\033[0m"      # 默认颜色
@@ -22,24 +22,19 @@ mkdir -p "$CORE_DIR" "$CONFIG_DIR" "$SCRIPTS_DIR"
 # 检查模块并赋予执行权限
 check_and_prepare_modules() {
     local core_modules=("system.sh" "package.sh" "terminal.sh" "settings.sh")
-    local missing_modules=()
+    local missing=false
     
     for module in "${core_modules[@]}"; do
         local module_path="$CORE_DIR/$module"
         if [ -f "$module_path" ]; then
-            if [ ! -x "$module_path" ]; then
-                chmod +x "$module_path" 2>/dev/null
-            fi
+            [ ! -x "$module_path" ] && chmod +x "$module_path" 2>/dev/null
         else
-            missing_modules+=("$module")
+            missing=true
         fi
     done
     
-    if [ ${#missing_modules[@]} -gt 0 ]; then
-        echo -e "${WARN}警告:${NORMAL} 以下模块缺失:"
-        for module in "${missing_modules[@]}"; do
-            echo -e " - $module"
-        done
+    if [ "$missing" = true ]; then
+        echo -e "${WARN}警告:${NORMAL} 部分核心模块缺失，某些功能可能无法使用"
         echo
         read -p "按回车键继续..." 
     fi
