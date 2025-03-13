@@ -7,7 +7,7 @@ TRAVBOX_DIR="$HOME/travbox"
 CORE_DIR="$TRAVBOX_DIR/core"
 CONFIG_DIR="$TRAVBOX_DIR/config"
 SCRIPTS_DIR="$TRAVBOX_DIR/scripts"
-VERSION="0.1.4"
+VERSION="0.1.5"
 
 # 颜色定义
 NORMAL="\033[0m"      # 默认颜色
