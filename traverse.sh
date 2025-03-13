@@ -1,15 +1,16 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-# Traverse - 全面的Termux辅助工具
+# Traverse - Termux辅助工具
 # 主程序文件 (traverse.sh)
 
-# ANSI颜色代码
+# 颜色代码
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 PURPLE='\033[0;35m'
 CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m' # 无色
 
 # 定义路径
@@ -51,12 +52,28 @@ initialize() {
     source_file "$CONFIG_PATH/config.sh"
 }
 
+# 获取终端宽度并创建分隔线
+get_terminal_width() {
+    if command -v tput &> /dev/null; then
+        tput cols
+    else
+        echo 80  # 默认宽度
+    fi
+}
+
+create_separator() {
+    local width=$(get_terminal_width)
+    printf "%${width}s" | tr ' ' '-'
+}
+
 # 显示页眉
 display_header() {
     clear
-    echo -e "${CYAN}┌───────────────────────────────────┐${NC}"
-    echo -e "${CYAN}│        ${GREEN}Traverse for Termux${CYAN}        │${NC}"
-    echo -e "${CYAN}└───────────────────────────────────┘${NC}"
+    local width=$(get_terminal_width)
+    local version=$(grep "VERSION=" "$CONFIG_PATH/config.sh" 2>/dev/null | cut -d'"' -f2 || echo "1.0.0")
+    
+    echo -e "${CYAN}${BOLD}Traverse for Termux ${version}${NC}"
+    echo -e "${CYAN}$(create_separator)${NC}"
     echo
 }
 
@@ -64,7 +81,7 @@ display_header() {
 display_main_menu() {
     display_header
     
-    echo -e "${BLUE}主菜单:${NC}"
+    echo -e "${BLUE}${BOLD}主菜单:${NC}"
     echo -e "${YELLOW}1.${NC} 系统维护"
     echo -e "${YELLOW}2.${NC} 软件包管理"
     echo -e "${YELLOW}3.${NC} 终端配置"
@@ -82,7 +99,8 @@ display_main_menu() {
         done < "$CONFIG_PATH/pinned.list"
         
         if [[ "$has_items" == "true" ]]; then
-            echo -e "${BLUE}固定项:${NC}"
+            echo -e "${CYAN}$(printf '%.0s-' {1..30})${NC}"
+            echo -e "${BLUE}${BOLD}固定项:${NC}"
             local count=5
             while IFS= read -r line; do
                 [[ -z "$line" || "$line" =~ ^# ]] && continue  # 跳过空行和注释
@@ -113,7 +131,8 @@ handle_main_menu() {
             framework_settings_menu
             ;;
         0) # 退出
-            echo -e "${GREEN}谢谢使用 Traverse！${NC}"
+            clear
+            echo -e "${GREEN}感谢使用 Traverse！${NC}"
             exit 0
             ;;
         *) # 处理固定项
@@ -135,11 +154,12 @@ handle_main_menu() {
                 
                 if [[ -n "$cmd" ]]; then
                     clear
-                    echo -e "${GREEN}执行: $name${NC}"
+                    echo -e "${GREEN}${BOLD}执行: $name${NC}"
                     echo -e "${BLUE}$cmd${NC}"
-                    echo -e "-----------------------------------"
+                    echo -e "${CYAN}$(printf '%.0s-' {1..30})${NC}"
                     eval "$cmd"
-                    echo -e "\n${YELLOW}按回车键返回主菜单...${NC}"
+                    echo
+                    echo -e "${YELLOW}按回车键返回主菜单...${NC}"
                     read
                 else
                     echo -e "${RED}无效的选择！${NC}"
@@ -243,8 +263,8 @@ check_core_modules() {
             echo "# ${menu_title}菜单函数" >> "$CORE_PATH/$module"
             echo "${func_name}() {" >> "$CORE_PATH/$module"
             echo "    while true; do" >> "$CORE_PATH/$module"
-            echo "        clear" >> "$CORE_PATH/$module"
-            echo "        echo -e \"${BLUE}${menu_title}:${NC}\"" >> "$CORE_PATH/$module"
+            echo "        display_header" >> "$CORE_PATH/$module"
+            echo "        echo -e \"${BLUE}${BOLD}${menu_title}:${NC}\"" >> "$CORE_PATH/$module"
             
             # 添加菜单项
             local i=1
