@@ -7,7 +7,7 @@ TRAVBOX_DIR="$HOME/travbox"
 CORE_DIR="$TRAVBOX_DIR/core"
 CONFIG_DIR="$TRAVBOX_DIR/config"
 SCRIPTS_DIR="$TRAVBOX_DIR/scripts"
-VERSION="0.1.2"
+VERSION="0.1.3"
 
 # 颜色定义
 NORMAL="\033[0m"      # 默认颜色
@@ -39,6 +39,9 @@ check_and_prepare_modules() {
         read -p "按回车键继续..." 
     fi
 }
+
+# 检查模块并赋予执行权限
+check_and_prepare_modules
 
 # 打印标题
 print_header() {
@@ -121,9 +124,6 @@ run_module() {
     
     "$module_path"
 }
-
-# 检查模块并赋予执行权限
-check_and_prepare_modules
 
 # 主程序循环
 while true; do
