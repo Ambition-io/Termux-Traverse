@@ -10,15 +10,11 @@ SCRIPTS_DIR="$TRAVBOX_DIR/scripts"
 VERSION="0.1.0"
 
 # 颜色定义
-RED="\033[31m"
-GREEN="\033[32m"
-YELLOW="\033[33m"
-BLUE="\033[34m"
-CYAN="\033[36m"
-PURPLE="\033[35m"
-WHITE="\033[37m"
-BOLD="\033[1m"
-RESET="\033[0m"
+NORMAL="\033[0m"      # 默认颜色
+BOLD="\033[1m"        # 粗体
+TITLE="\033[1;34m"    # 标题颜色（蓝色粗体）
+MENU="\033[1;32m"     # 菜单颜色（绿色粗体）
+ERROR="\033[1;31m"    # 错误颜色（红色粗体）
 
 # 创建必要的目录
 mkdir -p "$CORE_DIR" "$CONFIG_DIR" "$SCRIPTS_DIR"
@@ -27,7 +23,7 @@ mkdir -p "$CORE_DIR" "$CONFIG_DIR" "$SCRIPTS_DIR"
 for module in system.sh package.sh terminal.sh settings.sh; do
     if [ ! -f "$CORE_DIR/$module" ]; then
         echo "#!/bin/bash" > "$CORE_DIR/$module"
-        echo "echo -e \"${YELLOW}[提示]${RESET} 模块 $module 尚未实现。\"" >> "$CORE_DIR/$module"
+        echo "echo \"模块 $module 尚未实现。\"" >> "$CORE_DIR/$module"
         echo "echo" >> "$CORE_DIR/$module"
         echo "read -p \"按回车键返回...\" " >> "$CORE_DIR/$module"
         chmod +x "$CORE_DIR/$module"
@@ -42,34 +38,29 @@ fi
 # 打印标题
 print_header() {
     clear
-    local term_width=$(tput cols)
-    local title="Traverse Termux v${VERSION}"
-    local padding=$(( (term_width - ${#title} - 2) / 2 ))
-    
-    printf "%s%s%s\n" "${CYAN}${BOLD}" "$(printf '═%.0s' $(seq 1 $term_width))" "${RESET}"
-    
-    printf "%s%s%s%s%s\n" "${CYAN}${BOLD}" "$(printf ' %.0s' $(seq 1 $padding))" "$title" "$(printf ' %.0s' $(seq 1 $padding))" "${RESET}"
-    
-    printf "%s%s%s\n\n" "${CYAN}${BOLD}" "$(printf '═%.0s' $(seq 1 $term_width))" "${RESET}"
+    # 标题
+    echo -e "${TITLE}===========================================${NORMAL}"
+    echo -e "${TITLE}          Traverse Termux v${VERSION}${NORMAL}"
+    echo -e "${TITLE}===========================================${NORMAL}"
+    echo
 }
 
 # 打印菜单项
 print_menu_item() {
     local number=$1
     local text=$2
-    local color=$3
-    echo -e "  ${color}${BOLD}[$number]${RESET} ${WHITE}$text${RESET}"
+    echo -e "${MENU}${number}.${NORMAL} ${text}"
 }
 
 # 打印主菜单
 print_main_menu() {
-    echo -e "${CYAN}${BOLD}【主菜单】${RESET}"
+    echo -e "${TITLE}主菜单:${NORMAL}"
     echo
-    print_menu_item "1" "系统维护" $GREEN
-    print_menu_item "2" "软件包管理" $GREEN
-    print_menu_item "3" "终端配置" $GREEN
-    print_menu_item "4" "框架设置" $GREEN
-    print_menu_item "0" "退出程序" $RED
+    print_menu_item "1" "系统维护"
+    print_menu_item "2" "软件包管理"
+    print_menu_item "3" "终端配置"
+    print_menu_item "4" "框架设置"
+    print_menu_item "0" "退出程序"
     echo
 }
 
@@ -82,11 +73,11 @@ print_quick_access() {
         while IFS='|' read -r name path description || [[ -n "$name" ]]; do
             if [ -n "$name" ]; then
                 if [ "$has_items" = false ]; then
-                    echo -e "${CYAN}${BOLD}【快速访问】${RESET}"
+                    echo -e "${TITLE}快速访问:${NORMAL}"
                     echo
                     has_items=true
                 fi
-                print_menu_item "$count" "$name" $PURPLE
+                print_menu_item "$count" "$name"
                 count=$((count + 1))
             fi
         done < "$CONFIG_DIR/pinned.list"
@@ -99,16 +90,9 @@ print_quick_access() {
 
 # 打印分隔线
 print_separator() {
-    local term_width=$(tput cols)
-    echo -e "${BLUE}$(printf '─%.0s' $(seq 1 $term_width))${RESET}"
+    echo -e "-------------------------------------------"
     echo
 }
-
-# 打印信息、成功、警告和错误消息
-print_info() { echo -e "${BLUE}[信息]${RESET} $1"; }
-print_success() { echo -e "${GREEN}[成功]${RESET} $1"; }
-print_warning() { echo -e "${YELLOW}[警告]${RESET} $1"; }
-print_error() { echo -e "${RED}[错误]${RESET} $1"; }
 
 # 主程序循环
 while true; do
@@ -117,7 +101,7 @@ while true; do
     print_separator
     print_quick_access
     
-    echo -e "${YELLOW}请输入选择的序号: ${RESET}"
+    echo -e "请输入选择的序号:"
     read -p "> " choice
     
     case $choice in
@@ -157,12 +141,12 @@ while true; do
                     if [ -x "$selected_path" ]; then
                         "$selected_path"
                     else
-                        print_error "无法执行 $selected_path"
+                        echo -e "${ERROR}错误:${NORMAL} 无法执行 $selected_path"
                         echo
                         read -p "按回车键继续..." 
                     fi
                 else
-                    print_error "无效的快速访问项目选择"
+                    echo -e "${ERROR}错误:${NORMAL} 无效的快速访问项目选择"
                     echo
                     read -p "按回车键继续..." 
                 fi
@@ -170,11 +154,11 @@ while true; do
             ;;
         0|q|Q|exit)
             clear
-            echo -e "${GREEN}${BOLD}感谢您使用 Traverse！${RESET}"
+            echo -e "${BOLD}感谢您使用 Traverse！${NORMAL}"
             exit 0
             ;;
         *)
-            print_error "无效选项"
+            echo -e "${ERROR}错误:${NORMAL} 无效选项"
             echo
             read -p "按回车键继续..." 
             ;;
