@@ -7,7 +7,7 @@ TRAVBOX_DIR="$HOME/travbox"
 CORE_DIR="$TRAVBOX_DIR/core"
 CONFIG_DIR="$TRAVBOX_DIR/config"
 SCRIPTS_DIR="$TRAVBOX_DIR/scripts"
-VERSION="0.1.5"
+VERSION="0.1.5beta"
 
 # 颜色定义
 NORMAL="\033[0m"      # 默认颜色
@@ -32,7 +32,7 @@ print_header() {
 
 # 检查模块并赋予执行权限
 check_and_prepare_modules() {
-    local core_modules=("system.sh" "package.sh" "terminal.sh" "settings.sh")
+    local core_modules=("system_test.sh" "package_test.sh" "terminal_test.sh" "settings_test.sh")
     local missing=false
     local missing_modules=""
     
