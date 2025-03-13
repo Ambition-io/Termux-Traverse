@@ -7,7 +7,7 @@ TRAVBOX_DIR="$HOME/travbox"
 CORE_DIR="$TRAVBOX_DIR/core"
 CONFIG_DIR="$TRAVBOX_DIR/config"
 SCRIPTS_DIR="$TRAVBOX_DIR/scripts"
-VERSION="0.1.5beta"
+VERSION="0.1.5test"
 
 # 颜色定义
 NORMAL="\033[0m"      # 默认颜色
@@ -104,7 +104,7 @@ print_separator() {
     echo
 }
 
-# 执行模块（简化版本，不再重复检查文件权限）
+# 执行模块
 run_module() {
     local module_name=$1
     local module_path="$CORE_DIR/$module_name"
@@ -115,14 +115,32 @@ run_module() {
         return
     fi
     
-    # 直接执行模块，权限检查已在check_and_prepare_modules中完成
-    "$module_path"
+    # 检查执行权限并尝试设置
+    if [ ! -x "$module_path" ]; then
+        chmod +x "$module_path" 2>/dev/null
+    fi
+    
+    # 再次检查是否成功设置了执行权限
+    if [ -x "$module_path" ]; then
+        # 执行模块并捕获返回值
+        "$module_path"
+        local exit_code=$?
+        
+        # 检查执行是否成功
+        if [ $exit_code -ne 0 ]; then
+            echo -e "${ERROR}错误:${NORMAL} 模块 $module_name 执行失败 (退出代码: $exit_code)"
+            read -p "按回车键继续..." 
+        fi
+    else
+        echo -e "${ERROR}错误:${NORMAL} 无法设置模块 $module_name 为可执行"
+        read -p "按回车键继续..." 
+    fi
 }
 
 # 主程序循环
 while true; do
     print_header
-    check_and_prepare_modules  # 移动到标题之后，菜单之前，确保警告可见
+    check_and_prepare_modules
     print_main_menu
     print_separator
     print_quick_access
