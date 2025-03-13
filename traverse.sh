@@ -7,7 +7,7 @@ TRAVBOX_DIR="$HOME/travbox"
 CORE_DIR="$TRAVBOX_DIR/core"
 CONFIG_DIR="$TRAVBOX_DIR/config"
 SCRIPTS_DIR="$TRAVBOX_DIR/scripts"
-VERSION="0.1.3"
+VERSION="0.1.4"
 
 # 颜色定义
 NORMAL="\033[0m"      # 默认颜色
@@ -15,6 +15,7 @@ BOLD="\033[1m"        # 粗体
 TITLE="\033[1;34m"    # 标题颜色（蓝色粗体）
 MENU="\033[1;32m"     # 菜单颜色（绿色粗体）
 ERROR="\033[1;31m"    # 错误颜色（红色粗体）
+WARN="\033[1;33m"     # 警告颜色（黄色粗体）
 
 # 创建必要的目录
 mkdir -p "$CORE_DIR" "$CONFIG_DIR" "$SCRIPTS_DIR"
@@ -39,9 +40,6 @@ check_and_prepare_modules() {
         read -p "按回车键继续..." 
     fi
 }
-
-# 检查模块并赋予执行权限
-check_and_prepare_modules
 
 # 打印标题
 print_header() {
@@ -113,21 +111,14 @@ run_module() {
         return
     fi
     
-    if [ ! -x "$module_path" ]; then
-        chmod +x "$module_path" 2>/dev/null
-        if [ ! -x "$module_path" ]; then
-            echo -e "${ERROR}错误:${NORMAL} 无法设置模块 $module_name 为可执行"
-            read -p "按回车键继续..." 
-            return
-        fi
-    fi
-    
+    # 由于已经在check_and_prepare_modules中检查过权限，这里直接执行
     "$module_path"
 }
 
 # 主程序循环
 while true; do
     print_header
+    check_and_prepare_modules  # 移到这里，在UI显示后检查模块
     print_main_menu
     print_separator
     print_quick_access
