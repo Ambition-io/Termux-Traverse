@@ -19,21 +19,31 @@ ERROR="\033[1;31m"    # 错误颜色（红色粗体）
 # 创建必要的目录
 mkdir -p "$CORE_DIR" "$CONFIG_DIR" "$SCRIPTS_DIR"
 
-# 检查必需的核心脚本，如果缺失则创建占位符
-for module in system.sh package.sh terminal.sh settings.sh; do
-    if [ ! -f "$CORE_DIR/$module" ]; then
-        echo "#!/bin/bash" > "$CORE_DIR/$module"
-        echo "echo \"模块 $module 尚未实现。\"" >> "$CORE_DIR/$module"
-        echo "echo" >> "$CORE_DIR/$module"
-        echo "read -p \"按回车键返回...\" " >> "$CORE_DIR/$module"
-        chmod +x "$CORE_DIR/$module"
+# 检查模块并赋予执行权限
+check_and_prepare_modules() {
+    local core_modules=("system.sh" "package.sh" "terminal.sh" "settings.sh")
+    local missing_modules=()
+    
+    for module in "${core_modules[@]}"; do
+        local module_path="$CORE_DIR/$module"
+        if [ -f "$module_path" ]; then
+            if [ ! -x "$module_path" ]; then
+                chmod +x "$module_path" 2>/dev/null
+            fi
+        else
+            missing_modules+=("$module")
+        fi
+    done
+    
+    if [ ${#missing_modules[@]} -gt 0 ]; then
+        echo -e "${WARN}警告:${NORMAL} 以下模块缺失:"
+        for module in "${missing_modules[@]}"; do
+            echo -e " - $module"
+        done
+        echo
+        read -p "按回车键继续..." 
     fi
-done
-
-# 初始化固定项目
-if [ ! -f "$CONFIG_DIR/pinned.list" ]; then
-    touch "$CONFIG_DIR/pinned.list"
-fi
+}
 
 # 打印标题
 print_header() {
@@ -94,6 +104,32 @@ print_separator() {
     echo
 }
 
+# 执行模块
+run_module() {
+    local module_name=$1
+    local module_path="$CORE_DIR/$module_name"
+    
+    if [ ! -f "$module_path" ]; then
+        echo -e "${ERROR}错误:${NORMAL} 模块 $module_name 不存在"
+        read -p "按回车键继续..." 
+        return
+    fi
+    
+    if [ ! -x "$module_path" ]; then
+        chmod +x "$module_path" 2>/dev/null
+        if [ ! -x "$module_path" ]; then
+            echo -e "${ERROR}错误:${NORMAL} 无法设置模块 $module_name 为可执行"
+            read -p "按回车键继续..." 
+            return
+        fi
+    fi
+    
+    "$module_path"
+}
+
+# 检查模块并赋予执行权限
+check_and_prepare_modules
+
 # 主程序循环
 while true; do
     print_header
@@ -106,20 +142,16 @@ while true; do
     
     case $choice in
         1)
-            # 系统维护
-            "$CORE_DIR/system.sh"
+            run_module "system.sh"
             ;;
         2)
-            # 软件包管理
-            "$CORE_DIR/package.sh"
+            run_module "package.sh"
             ;;
         3)
-            # 终端配置
-            "$CORE_DIR/terminal.sh"
+            run_module "terminal.sh"
             ;;
         4)
-            # 框架设置
-            "$CORE_DIR/settings.sh"
+            run_module "settings.sh"
             ;;
         [5-9]|[1-9][0-9])
             # 访问固定项目（5号及以后为快速访问项目）
@@ -138,16 +170,23 @@ while true; do
                 done < "$CONFIG_DIR/pinned.list"
                 
                 if [ -n "$selected_path" ]; then
-                    if [ -x "$selected_path" ]; then
-                        "$selected_path"
+                    if [ -f "$selected_path" ]; then
+                        if [ ! -x "$selected_path" ]; then
+                            chmod +x "$selected_path" 2>/dev/null
+                        fi
+                        
+                        if [ -x "$selected_path" ]; then
+                            "$selected_path"
+                        else
+                            echo -e "${ERROR}错误:${NORMAL} 无法设置快速访问项目为可执行"
+                            read -p "按回车键继续..." 
+                        fi
                     else
-                        echo -e "${ERROR}错误:${NORMAL} 无法执行 $selected_path"
-                        echo
+                        echo -e "${ERROR}错误:${NORMAL} 快速访问项目不存在"
                         read -p "按回车键继续..." 
                     fi
                 else
                     echo -e "${ERROR}错误:${NORMAL} 无效的快速访问项目选择"
-                    echo
                     read -p "按回车键继续..." 
                 fi
             fi
@@ -159,7 +198,6 @@ while true; do
             ;;
         *)
             echo -e "${ERROR}错误:${NORMAL} 无效选项"
-            echo
             read -p "按回车键继续..." 
             ;;
     esac
