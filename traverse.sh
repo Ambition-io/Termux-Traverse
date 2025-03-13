@@ -20,27 +20,6 @@ WARN="\033[1;33m"     # 警告颜色（黄色粗体）
 # 创建必要的目录
 mkdir -p "$CORE_DIR" "$CONFIG_DIR" "$SCRIPTS_DIR"
 
-# 检查模块并赋予执行权限
-check_and_prepare_modules() {
-    local core_modules=("system.sh" "package.sh" "terminal.sh" "settings.sh")
-    local missing=false
-    
-    for module in "${core_modules[@]}"; do
-        local module_path="$CORE_DIR/$module"
-        if [ -f "$module_path" ]; then
-            [ ! -x "$module_path" ] && chmod +x "$module_path" 2>/dev/null
-        else
-            missing=true
-        fi
-    done
-    
-    if [ "$missing" = true ]; then
-        echo -e "${WARN}警告:${NORMAL} 部分核心模块缺失，某些功能可能无法使用"
-        echo
-        read -p "按回车键继续..." 
-    fi
-}
-
 # 打印标题
 print_header() {
     clear
@@ -49,6 +28,31 @@ print_header() {
     echo -e "${TITLE}          Traverse Termux v${VERSION}${NORMAL}"
     echo -e "${TITLE}===========================================${NORMAL}"
     echo
+}
+
+# 检查模块并赋予执行权限
+check_and_prepare_modules() {
+    local core_modules=("system.sh" "package.sh" "terminal.sh" "settings.sh")
+    local missing=false
+    local missing_modules=""
+    
+    for module in "${core_modules[@]}"; do
+        local module_path="$CORE_DIR/$module"
+        if [ -f "$module_path" ]; then
+            [ ! -x "$module_path" ] && chmod +x "$module_path" 2>/dev/null
+        else
+            missing=true
+            missing_modules="${missing_modules} ${module}"
+        fi
+    done
+    
+    if [ "$missing" = true ]; then
+        echo -e "${WARN}========== 警告信息 ==========${NORMAL}"
+        echo -e "${WARN}部分核心模块缺失，某些功能可能无法使用${NORMAL}"
+        echo -e "${WARN}缺失模块:${missing_modules}${NORMAL}"
+        echo -e "${WARN}=============================${NORMAL}"
+        echo
+    fi
 }
 
 # 打印菜单项
@@ -100,7 +104,7 @@ print_separator() {
     echo
 }
 
-# 执行模块
+# 执行模块（简化版本，不再重复检查文件权限）
 run_module() {
     local module_name=$1
     local module_path="$CORE_DIR/$module_name"
@@ -111,14 +115,14 @@ run_module() {
         return
     fi
     
-    # 由于已经在check_and_prepare_modules中检查过权限，这里直接执行
+    # 直接执行模块，权限检查已在check_and_prepare_modules中完成
     "$module_path"
 }
 
 # 主程序循环
 while true; do
     print_header
-    check_and_prepare_modules  # 移到这里，在UI显示后检查模块
+    check_and_prepare_modules  # 移动到标题之后，菜单之前，确保警告可见
     print_main_menu
     print_separator
     print_quick_access
